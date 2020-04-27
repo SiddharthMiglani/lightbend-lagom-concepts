@@ -18,7 +18,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class MicroServiceTwoImpl(implicit ec: ExecutionContext) extends MicroServiceTwoService {
 
   override def ping: ServiceCall[NotUsed, String] = ServiceCall { _ =>
-    Future.successful("Response from Microservice two")
+    Future.successful("Response from micro-service two")
   }
 
   override def nonPrimitiveResponse: ServiceCall[Long, Item] = ServiceCall { id =>

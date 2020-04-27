@@ -1,0 +1,175 @@
+Kafka set up comes as a .tz file which needs to be extracted.
+
+-------------------------------------------------------------Windows--------------------------------------------------------------------------------------
+If like me, you are in a habit to put each installable in "Program Files", then below commands will only work if you get into Program Files like below:
+
+C:\> cd PROGRA~1
+C:\PROGRA~1>cd kafka_2.12-2.4.1
+C:\PROGRA~1\kafka_2.12-2.4.1>
+
+once you are at above location, run below commands:
+
+	For Zookeper
+		bin\windows\zookeeper-server-start.bat config\zookeeper.properties
+	
+	For Kafka server
+		bin\windows\kafka-server-start.bat config\server.properties
+	
+	Create a topic called "test" and check if it is created
+		bin\windows\kafka-topics.bat --create --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1 --topic test
+		bin\windows\kafka-topics.bat --list --bootstrap-server localhost:9092
+	
+	Publish to topic called "test", taking input from console:
+		bin\windows\kafka-console-producer.bat --broker-list localhost:9092 --topic test
+		
+	A simple consumer to dump messages to console:
+		bin\windows\kafka-console-consumer.bat --bootstrap-server localhost:9092 --topic test --from-beginning
+	
+
+Create a multi broker cluster:
+	
+	Duplicate the server.properties and change few values:
+		copy paste config/server.properties and rename new file to config/server-1.properties
+		copy paste config/server.properties and rename new file to config/server-1.properties
+		
+		config/server-1.properties:
+			broker.id=1
+			listeners=PLAINTEXT://:9093
+			log.dirs=/tmp/kafka-logs-1
+ 
+		config/server-2.properties:
+			broker.id=2
+			listeners=PLAINTEXT://:9094
+			log.dirs=/tmp/kafka-logs-2
+	
+	Start two new servers:
+		bin\windows\kafka-server-start.bat config\server-1.properties &
+		bin\windows\kafka-server-start.bat config\server-2.properties &
+	
+	Create a new topic with replication factor as 3  and list and describe it:
+		bin\windows\kafka-topics.bat --create --bootstrap-server localhost:9092 --replication-factor 3 --partitions 1 --topic my-replicated-topic
+		bin\windows\kafka-topics.bat --list --bootstrap-server localhost:9092
+		bin\windows\kafka-topics.bat --describe --bootstrap-server localhost:9092 --topic my-replicated-topic
+		
+		Output of describe:
+			Topic: my-replicated-topic      PartitionCount: 1       ReplicationFactor: 3    Configs: segment.bytes=1073741824
+				Topic: my-replicated-topic      Partition: 0    Leader: 2       Replicas: 2,1,0 Isr: 2,1,0
+				
+			Line 1 - Summary
+			Line 2,3,4,5 .. - Description of each partition 
+							-(
+								Topic: Topic name
+								Partition: Partition number, 
+								Leader: Which node is leader for this partition, 
+								Replicas: Which nodes have replicas of this partition, 
+								ISR: In-Sync Replicas i.e. a subset of replicas which are currently in sync
+							)
+	
+	Test fault tolerance (kill the leader | change below commands according to which node was leader):
+		Identify the task:
+			wmic process where "caption = 'java.exe' and commandline like '%server-1.properties%'" get processid
+			or
+			tasklist 
+		Kill the task:
+			taskkill /pid <processid here> /f
+		Desribe the topic again:
+			bin\windows\kafka-topics.bat --describe --bootstrap-server localhost:9092 --topic my-replicated-topic
+
+Use Kafka Connect:
+
+	Create a file with some data:
+		echo -e "foo\nbar" > test.txt
+	
+	Start a connector:
+		bin\windows\connect-standalone.bat config\connect-standalone.properties config\connect-file-source.properties config\connect-file-sink.properties
+
+		Above command will connect to file created above -> read the contents -> write to a topic -> read from the topic via a subscriber -> write to another file
+		It will be a live connection. If you add something to "test.txt" it will also show up in "test.sink.txt"
+		You can also subscribe to the intermediate topic "connect-test" and you will find all the content there too
+		So, basically kafka connect is an abstraction to a publisher - topic - subscriber system built automatically with an additional step where subscriber writes the output somewhere
+		
+-------------------------------------------------------------Linux--------------------------------------------------------------------------------------
+cd kafka_2.12-2.4.1
+
+once you are insde the directory, run below commands:
+
+	For Zookeper
+		bin/zookeeper-server-start.sh config/zookeeper.properties
+	
+	For Kafka server
+		bin/kafka-server-start.sh config/server.properties
+		
+	Create a topic called "test" and check if it is created
+		bin/kafka-topics.sh --create --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1 --topic test
+		bin/kafka-topics.sh --list --bootstrap-server localhost:9092
+		
+	Publish to topic called "test", taking input from console:
+		bin/kafka-console-producer.sh --broker-list localhost:9092 --topic test
+		
+	A simple consumer to dump messages to console:
+		bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic test --from-beginning
+		
+Create a multi broker cluster:
+	
+	Duplicate the server.properties and change few values:
+		cp config/server.properties config/server-1.properties
+		cp config/server.properties config/server-1.properties
+		
+		config/server-1.properties:
+			broker.id=1
+			listeners=PLAINTEXT://:9093
+			log.dirs=/tmp/kafka-logs-1
+ 
+		config/server-2.properties:
+			broker.id=2
+			listeners=PLAINTEXT://:9094
+			log.dirs=/tmp/kafka-logs-2
+			
+	Start two new servers:
+		bin/kafka-server-start.sh config/server-1.properties &
+		bin/kafka-server-start.sh config/server-2.properties &
+		
+	Create a new topic with replication factor as 3 and list and describe it:
+		bin/kafka-topics.sh --create --bootstrap-server localhost:9092 --replication-factor 3 --partitions 1 --topic my-replicated-topic
+		bin/kafka-topics.sh --list --bootstrap-server localhost:9092
+		bin/kafka-topics.sh --describe --bootstrap-server localhost:9092 --topic my-replicated-topic
+		
+		Output of describe:
+			Topic: my-replicated-topic      PartitionCount: 1       ReplicationFactor: 3    Configs: segment.bytes=1073741824
+				Topic: my-replicated-topic      Partition: 0    Leader: 2       Replicas: 2,1,0 Isr: 2,1,0
+				
+			Line 1 - Summary
+			Line 2,3,4,5 .. - Description of each partition 
+							-(
+								Topic: Topic name
+								Partition: Partition number, 
+								Leader: Which node is leader for this partition, 
+								Replicas: Which nodes have replicas of this partition, 
+								ISR: In-Sync Replicas i.e. a subset of replicas which are currently in sync
+							)
+	
+	Test fault tolerance (kill the leader | change below commands according to which node was leader):
+		Identify the task:
+			ps aux | grep server-1.properties 
+		Kill the task:
+			kill -9 <processid here>
+		Desribe the topic again:
+			bin\windows\kafka-topics.bat --describe --bootstrap-server localhost:9092 --topic my-replicated-topic
+
+Use Kafka Connect:
+
+	Create a file with some data:
+		echo -e "foo\nbar" > test.txt
+	
+	Start a connector:
+		bin/connect-standalone.sh config/connect-standalone.properties config/connect-file-source.properties config/connect-file-sink.properties
+		
+		Above command will connect to file created above -> read the contents -> write to a topic -> read from the topic via a subscriber -> write to another file
+		It will be a live connection. If you add something to "test.txt" it will also show up in "test.sink.txt"
+		You can also subscribe to the intermediate topic "connect-test" and you will find all the content there too
+		So, basically kafka connect is an abstraction to a publisher - topic - subscriber system built automatically with an additional step where subscriber writes the output somewhere
+		
+			
+			
+			
+			

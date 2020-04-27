@@ -10,9 +10,10 @@ import play.api.libs.json.{Format, Json}
 
 class ItemEntity extends PersistentEntity {
 
+  override type State = ItemState
   override type Command = ItemCommand[_]
   override type Event = ItemEvent
-  override type State = ItemState
+
 
   override def initialState: ItemState = ItemState(Option.empty, LocalDateTime.now().toString)
 
@@ -32,6 +33,13 @@ class ItemEntity extends PersistentEntity {
   }
 }
 
+// state
+case class ItemState(item: Option[Item], timestamp: String)
+
+object ItemState {
+  implicit val artifactStateFormat: Format[Item] = Json.format[Item]
+}
+
 // command
 trait ItemCommand[T] extends ReplyType[T]
 
@@ -48,6 +56,7 @@ object ItemEventTag {
 
 sealed trait ItemEvent extends AggregateEvent[ItemEvent] {
   override def aggregateTag: AggregateEventTagger[ItemEvent] = ItemEventTag.INSTANCE
+  // override def aggregateTag: AggregateEventTagger[ItemEvent] = AggregateEventTag[ItemEvent]
 }
 
 case class ItemSavedEvent(item: Item) extends ItemEvent
@@ -56,9 +65,4 @@ object ItemSavedEvent {
   implicit val fomatter = Json.format[ItemSavedEvent]
 }
 
-// state
-case class ItemState(item: Option[Item], timestamp: String)
 
-object ItemState {
-  implicit val artifactStateFormat: Format[Item] = Json.format[Item]
-}
