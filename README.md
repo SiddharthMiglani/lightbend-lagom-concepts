@@ -55,6 +55,7 @@ To understand what endpoints demonstrate what, you would need to go through the 
     - But, if you are trying to understand CQRS and Event Sourcing, this is the bare minimum code which can help you understand Entity, Command, Event and State
 - **async-comm-kafka-subscriber:** 
     - Minimally demonstrates the read-side of CQRS and event sourcing using Kafka as a message broker
+    - This line has been added just to create a new commit to understand Syndeia GitHub tutorial - should be deleted
 
 
 
